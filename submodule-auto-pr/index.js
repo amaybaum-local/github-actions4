@@ -17,6 +17,7 @@ Toolkit.run(async tools => {
 
   tools.log.pending("Fetching commit data");
   const newCommitHash = tools.context.payload.after;
+  const pusherName = tools.context.payload.pusher.name;
 
   tools.log.complete("Available data:");
   tools.log.complete(`Commit: ${newCommitHash}`);
@@ -88,28 +89,38 @@ Toolkit.run(async tools => {
     tools.log.complete("Branch updated");
 
     // Create a PR with this commit hash if it doesn't exist
-    const prAlreadyExists = (await tools.github.pulls.list({
+    let pr = (await tools.github.pulls.list({
       owner,
       repo,
       head: `${owner}:${automationBranchName}`
-    })).data.length;
+    })).data[0];
 
-    if (!prAlreadyExists) {
+    if (!pr) {
       tools.log.pending("Creating PR");
-      const pr = await tools.github.pulls.create({
+      pr = (await tools.github.pulls.create({
         owner,
         repo,
         title: prTitle,
         head: automationBranchName,
         base: targetBranch
-      });
+      })).data;
       tools.log.success("PR created");
     } else {
       tools.log.warn("PR already exists. Not creating another");
     }
+
+    // Then assign the person that merged the submodule as a reviewer on the new PR
+    const reviewRequest = await tools.github.pulls.createReviewRequest({
+      owner,
+      repo,
+      pull_number: pr.number,
+      reviewers: [pusherName]
+    });
+
   } catch (e) {
     console.log(e);
     tools.exit.failure("Error updating submodule");
+    process.exit(1); // Required to fail tests
   }
 
   tools.exit.success("Processing complete");

@@ -1,9 +1,12 @@
 {
   "after": "latest-sha-in-repo-used-for-submodule",
   "repository": {
-    "name": "api-specification",
+    "name": "submodule-repo",
     "owner": {
-      "name": "nexmo"
+      "name": "demo"
     }
+  },
+  "pusher": {
+    "name": "mheap"
   }
 }

@@ -27,6 +27,8 @@ let pr_branch_name = process.env.PR_BRANCH_NAME;
 let pr_title = process.env.PR_TITLE;
 
 describe("Submodule Automatic PRs", () => {
+  let tools;
+
   // Mock Toolkit.run to define `action` so we can call it
   Toolkit.run = jest.fn(actionFn => {
     action = actionFn;
@@ -57,6 +59,7 @@ describe("Submodule Automatic PRs", () => {
     mockCreateTargetBranch();
     mockPulls(false);
     mockCreatePull();
+    mockCreateReviewRequest();
     await action(tools);
     expect(tools.log.success).toHaveBeenCalledWith("PR created");
     expect(tools.exit.success).toHaveBeenCalledWith("Processing complete");
@@ -67,6 +70,7 @@ describe("Submodule Automatic PRs", () => {
     mockUpdateTargetBranch();
     mockPulls(false);
     mockCreatePull();
+    mockCreateReviewRequest();
     await action(tools);
     expect(tools.log.success).toHaveBeenCalledWith("PR created");
     expect(tools.exit.success).toHaveBeenCalledWith("Processing complete");
@@ -76,6 +80,7 @@ describe("Submodule Automatic PRs", () => {
     mockTargetBranchAlreadyExistsOnParent(true);
     mockUpdateTargetBranch();
     mockPulls(true);
+    mockCreateReviewRequest();
     await action(tools);
     expect(tools.log.warn).toHaveBeenCalledWith(
       "PR already exists. Not creating another"
@@ -159,7 +164,7 @@ function mockUpdateTargetBranch() {
 function mockPulls(exists) {
   let response = [];
   if (exists) {
-    response.push({ pull: "details" });
+    response.push({ number: "1989" });
   }
 
   nock("https://api.github.com")
@@ -174,5 +179,13 @@ function mockCreatePull() {
       head: pr_branch_name,
       base: target_branch
     })
-    .reply(200, {});
+    .reply(200, {number: "1989"});
+}
+
+function mockCreateReviewRequest() {
+  nock("https://api.github.com")
+    .post(`/repos/${owner}/${repo}/pulls/1989/requested_reviewers`, {
+      reviewers: ["mheap"]
+    })
+    .reply(200, {"review":"created", "this_is": "fake data"});
 }
