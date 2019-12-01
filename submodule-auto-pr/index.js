@@ -1,11 +1,12 @@
 const { Toolkit } = require("actions-toolkit");
 const Octokit = require("@octokit/rest");
 
+
 Toolkit.run(async tools => {
   const owner = process.env.PR_TARGET_ORG;
   const repo = process.env.PR_TARGET_REPO;
   const submodulePath = process.env.PR_SUBMODULE_PATH;
-  const targetBranch = process.env.PR_TARGET_BRANCH;
+  let targetBranch = process.env.PR_TARGET_BRANCH; // We may overwrite this later
   const automationBranchName = process.env.PR_BRANCH_NAME;
   const prTitle = process.env.PR_TITLE;
   const prBody = process.env.PR_BODY;
@@ -24,6 +25,39 @@ Toolkit.run(async tools => {
   tools.log.complete(`Commit: ${newCommitHash}`);
 
   try {
+    // Check if the automation branch exists
+    let ref = `heads/${automationBranchName}`;
+    tools.log.pending(`Listing refs for ${ref}`);
+    const branchAlreadyExists = (await tools.github.git.listRefs({
+      owner,
+      repo,
+      namespace: ref
+    })).data.length;
+    tools.log.complete(`Listing refs for ${ref}`);
+
+    // If the ref exists, our target branch is the automation branch (that ref)
+    // If not, we build a tree from the original branch
+    if (branchAlreadyExists) {
+      tools.log.info(`Branch ${ref} already exists`);
+      // If there are any commits on the branch not owned by us we need to add
+      // a new commit in that branch's tree. If not, we can build a tree from
+      // the target branch (usually master)
+      tools.log.pending(`Fetching commits that already exist`);
+      const commits = (await tools.github.repos.compareCommits({
+        owner,
+        repo,
+        head: automationBranchName,
+        base: targetBranch,
+      })).data.commits;
+      tools.log.complete(`Fetching commits that already exist`);
+      if (commits.length > 1) {
+        tools.log.info(`Found ${commits.length} commits`);
+        targetBranch = automationBranchName;
+      }
+    } else {
+      tools.log.info(`Creating branch ${ref}`);
+    }
+
     tools.log.pending(`Fetching ${targetBranch} branch info`);
     const targetBranchSha = (await tools.github.repos.getBranch({
       owner,
@@ -57,15 +91,9 @@ Toolkit.run(async tools => {
       tree: updatedCommitSha,
       parents: [targetBranchSha]
     });
+    let targetSha = commit.data.sha;
     tools.log.complete(`SHA committed: ${updatedCommitSha}`);
-
-    // Check if the branch exists
-    let ref = `heads/${automationBranchName}`;
-    const branchAlreadyExists = (await tools.github.git.listRefs({
-      owner,
-      repo,
-      namespace: ref
-    })).data.length;
+    tools.log.info(`Commit SHA is ${commit.data.sha}`);
 
     // If not, create it, otherwise update it
     let action;
@@ -80,12 +108,13 @@ Toolkit.run(async tools => {
       action = "updateRef";
     }
 
+    // Set the relevant ref to point to that commit
     await tools.github.git[action]({
       owner,
       repo,
       force: true,
       ref: baseRef + ref,
-      sha: commit.data.sha
+      sha: targetSha
     });
     tools.log.complete("Branch updated");
 

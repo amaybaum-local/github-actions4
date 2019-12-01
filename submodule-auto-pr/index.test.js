@@ -41,6 +41,7 @@ describe("Submodule Automatic PRs", () => {
     tools = new Toolkit();
 
     tools.log.debug = jest.fn();
+    tools.log.info = jest.fn();
     tools.log.pending = jest.fn();
     tools.log.complete = jest.fn();
     tools.log.success = jest.fn();
@@ -49,14 +50,14 @@ describe("Submodule Automatic PRs", () => {
     tools.exit.success = jest.fn();
     tools.exit.failure = jest.fn();
 
-    mockGetParentBranch();
-    mockCreateTree();
-    mockCommit();
   });
 
   it("new branch, new PR", async () => {
     mockTargetBranchAlreadyExistsOnParent(false);
     mockCreateTargetBranch();
+    mockGetParentBranch();
+    mockCreateTree("sha-of-current-master-in-parent");
+    mockCommit("sha-of-current-master-in-parent");
     mockPulls(false);
     mockCreatePull();
     mockCreateReviewRequest();
@@ -67,6 +68,10 @@ describe("Submodule Automatic PRs", () => {
 
   it("existing branch, new PR", async () => {
     mockTargetBranchAlreadyExistsOnParent(true);
+    mockCompareCommits(1);
+    mockGetParentBranch();
+    mockCreateTree("sha-of-current-master-in-parent");
+    mockCommit("sha-of-current-master-in-parent");
     mockUpdateTargetBranch();
     mockPulls(false);
     mockCreatePull();
@@ -76,8 +81,28 @@ describe("Submodule Automatic PRs", () => {
     expect(tools.exit.success).toHaveBeenCalledWith("Processing complete");
   });
 
-  it("existing branch, existing PR", async () => {
+  it("existing branch with single commit, existing PR", async () => {
     mockTargetBranchAlreadyExistsOnParent(true);
+    mockCompareCommits(1);
+    mockGetParentBranch();
+    mockCreateTree("sha-of-current-master-in-parent");
+    mockCommit("sha-of-current-master-in-parent");
+    mockUpdateTargetBranch();
+    mockPulls(true);
+    mockCreateReviewRequest();
+    await action(tools);
+    expect(tools.log.warn).toHaveBeenCalledWith(
+      "PR already exists. Not creating another"
+    );
+    expect(tools.exit.success).toHaveBeenCalledWith("Processing complete");
+  });
+
+  it("existing branch with multiple commits, existing PR", async () => {
+    mockTargetBranchAlreadyExistsOnParent(true);
+    mockCompareCommits(2);
+    mockGetAutomationBranch();
+    mockCreateTree("sha-of-current-automation-branch");
+    mockCommit("sha-of-current-automation-branch");
     mockUpdateTargetBranch();
     mockPulls(true);
     mockCreateReviewRequest();
@@ -97,10 +122,33 @@ function mockGetParentBranch() {
     });
 }
 
-function mockCreateTree() {
+function mockGetAutomationBranch() {
+  nock("https://api.github.com")
+    .get(`/repos/${owner}/${repo}/branches/${pr_branch_name}`)
+    .reply(200, {
+      commit: { sha: "sha-of-current-automation-branch" }
+    });
+}
+
+function mockCompareCommits(requiredCommits) {
+  requiredCommits = requiredCommits || 1;
+  let commits = [ { sha: "sha-of-submodule-commit" } ];
+
+  for (let i=1; i<requiredCommits; i++) {
+    commits.push({ sha: `sha-of-additional-content-that-prevents-force-push-${i}` });
+  }
+
+  nock("https://api.github.com")
+    .get(`/repos/${owner}/${repo}/compare/${target_branch}...${pr_branch_name}`)
+    .reply(200, {
+      commits
+    });
+}
+
+function mockCreateTree(parent_commit) {
   nock("https://api.github.com")
     .post(`/repos/${owner}/${repo}/git/trees`, {
-      base_tree: "sha-of-current-master-in-parent",
+      base_tree: parent_commit,
       tree: [
         {
           path: submodule_path,
@@ -115,12 +163,12 @@ function mockCreateTree() {
     });
 }
 
-function mockCommit() {
+function mockCommit(parent_commit) {
   nock("https://api.github.com")
     .post(`/repos/${owner}/${repo}/git/commits`, {
       message: "Automatic submodule test",
       tree: "sha-of-new-tree-in-parent",
-      parents: ["sha-of-current-master-in-parent"]
+      parents: [parent_commit]
     })
     .reply(200, {
       sha: "sha-of-commit-in-parent"
