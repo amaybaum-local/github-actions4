@@ -8,6 +8,7 @@ Toolkit.run(async tools => {
   const targetBranch = process.env.PR_TARGET_BRANCH;
   const automationBranchName = process.env.PR_BRANCH_NAME;
   const prTitle = process.env.PR_TITLE;
+  const prBody = process.env.PR_BODY;
 
   tools.log.debug(`Updating ${submodulePath} in ${owner}/${repo}@${targetBranch}`);
   tools.log.debug(`PR: ${prTitle} (${automationBranchName})`);
@@ -101,6 +102,7 @@ Toolkit.run(async tools => {
         owner,
         repo,
         title: prTitle,
+        body: prBody,
         head: automationBranchName,
         base: targetBranch
       })).data;
