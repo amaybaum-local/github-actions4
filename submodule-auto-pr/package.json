@@ -4,19 +4,21 @@
   "description": "",
   "main": "create-pr.js",
   "scripts": {
-    "lint": "eslint .",
-    "lint-fix": "eslint --fix ."
+    "test": "jest",
+    "lint": "eslint index.js index.test.js",
+    "lint-fix": "eslint --fix index.js index.test.js"
   },
   "author": "Michael Heap <m@michaelheap.com>",
   "license": "MIT",
   "dependencies": {
-    "actions-toolkit": "^2.1.0",
-    "node-fetch": "^2.3.0"
+    "actions-toolkit": "^2.1.0"
   },
   "devDependencies": {
     "eslint": "^5.10.0",
     "eslint-config-prettier": "^3.3.0",
     "eslint-plugin-prettier": "^3.0.0",
-    "prettier": "^1.15.3"
+    "prettier": "^1.15.3",
+    "jest": "^24.5.0",
+    "nock": "^11.7.0"
   }
 }

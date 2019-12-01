@@ -1,39 +1,16 @@
 const { Toolkit } = require("actions-toolkit");
 const Octokit = require("@octokit/rest");
-const fetch = require("node-fetch");
 
-(async () => {
+Toolkit.run(async tools => {
   const owner = process.env.PR_TARGET_ORG;
   const repo = process.env.PR_TARGET_REPO;
   const submodulePath = process.env.PR_SUBMODULE_PATH;
   const targetBranch = process.env.PR_TARGET_BRANCH;
   const automationBranchName = process.env.PR_BRANCH_NAME;
   const prTitle = process.env.PR_TITLE;
-  const requiredActiveBranch = process.env.PR_ACTIVE_BRANCH;
 
-  const tools = new Toolkit({
-    event: "push",
-    secrets: ["GH_ADMIN_TOKEN"]
-  });
-
-  tools.log.debug(`Job configuration:`);
-  tools.log.debug(`---------------------------`);
-  tools.log.debug(`Required active branch: ${requiredActiveBranch}`);
-  tools.log.debug(`Target Org: ${owner}`);
-  tools.log.debug(`Target Repo: ${repo}`);
-  tools.log.debug(`Target Submodule Path: ${submodulePath}`);
-  tools.log.debug(`Target branch name: ${targetBranch}`);
-  tools.log.debug(`New branch name: ${automationBranchName}`);
-  tools.log.debug(`New PR title: ${prTitle}`);
-  tools.log.debug(`---------------------------`);
-
-  // Make sure that this is a push to the target branch (usually master)
-  tools.log.info(`Running on ${tools.context.ref}`);
-  if (tools.context.ref != `refs/heads/${requiredActiveBranch}`) {
-    tools.exit.neutral(
-      `Expected refs/heads/${requiredActiveBranch}, got ${tools.context.ref}. Stopping execution`
-    );
-  }
+  tools.log.debug(`Updating ${submodulePath} in ${owner}/${repo}@${targetBranch}`);
+  tools.log.debug(`PR: ${prTitle} (${automationBranchName})`);
 
   // Overwrite the access token to be one with more permissions
   tools.github = new Octokit({ auth: process.env.GH_ADMIN_TOKEN });
@@ -134,4 +111,6 @@ const fetch = require("node-fetch");
     console.log(e);
     tools.exit.failure("Error updating submodule");
   }
-})();
+
+  tools.exit.success("Processing complete");
+});

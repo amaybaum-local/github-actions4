@@ -1,0 +1,9 @@
+{
+  "after": "latest-sha-in-repo-used-for-submodule",
+  "repository": {
+    "name": "api-specification",
+    "owner": {
+      "name": "nexmo"
+    }
+  }
+}
