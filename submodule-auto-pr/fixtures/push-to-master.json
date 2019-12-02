@@ -1,0 +1,12 @@
+{
+  "after": "latest-sha-in-repo-used-for-submodule",
+  "repository": {
+    "name": "submodule-repo",
+    "owner": {
+      "name": "demo"
+    }
+  },
+  "pusher": {
+    "name": "mheap"
+  }
+}
