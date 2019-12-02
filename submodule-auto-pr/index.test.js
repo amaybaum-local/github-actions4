@@ -49,7 +49,6 @@ describe("Submodule Automatic PRs", () => {
 
     tools.exit.success = jest.fn();
     tools.exit.failure = jest.fn();
-
   });
 
   it("new branch, new PR", async () => {
@@ -132,10 +131,12 @@ function mockGetAutomationBranch() {
 
 function mockCompareCommits(requiredCommits) {
   requiredCommits = requiredCommits || 1;
-  let commits = [ { sha: "sha-of-submodule-commit" } ];
+  let commits = [{ sha: "sha-of-submodule-commit" }];
 
-  for (let i=1; i<requiredCommits; i++) {
-    commits.push({ sha: `sha-of-additional-content-that-prevents-force-push-${i}` });
+  for (let i = 1; i < requiredCommits; i++) {
+    commits.push({
+      sha: `sha-of-additional-content-that-prevents-force-push-${i}`
+    });
   }
 
   nock("https://api.github.com")
@@ -227,7 +228,7 @@ function mockCreatePull() {
       head: pr_branch_name,
       base: target_branch
     })
-    .reply(200, {number: "1989"});
+    .reply(200, { number: "1989" });
 }
 
 function mockCreateReviewRequest() {
@@ -235,5 +236,5 @@ function mockCreateReviewRequest() {
     .post(`/repos/${owner}/${repo}/pulls/1989/requested_reviewers`, {
       reviewers: ["mheap"]
     })
-    .reply(200, {"review":"created", "this_is": "fake data"});
+    .reply(200, { review: "created", this_is: "fake data" });
 }
