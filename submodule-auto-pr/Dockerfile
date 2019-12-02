@@ -3,4 +3,4 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --only=production
 COPY . .
-ENTRYPOINT ["node", "/app/create-pr.js"]
+ENTRYPOINT ["node", "/app/index.js"]
