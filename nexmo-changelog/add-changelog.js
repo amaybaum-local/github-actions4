@@ -68,6 +68,10 @@ function addChangelogEntry(category, subcategory, title, content, github_link) {
             tools.exit.success('Changelog added');
         }
 
+        if (resp.status == 200) {
+            tools.exit.success('Changelog updated');
+        }
+
         tools.exit.failure('Error adding changelog: ' + resp.status);
     });
 }
