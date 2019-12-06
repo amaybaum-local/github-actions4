@@ -98,6 +98,9 @@ describe("Check Redirects Action", () => {
 
         await action(tools);
 
+        expect(fs.existsSync.mock.calls[0][0]).toBe("/tmp/_documentation/cn/file1.md");
+        expect(fs.existsSync.mock.calls[1][0]).toBe("/tmp/_documentation/en/client-sdk/file3.md");
+        expect(fs.existsSync.mock.calls[2][0]).toBe("/tmp/_documentation/en/file1.md");
         expect(tools.log.warn).toHaveBeenCalledWith("Ignorning renamed file not in _documentation folder: ignored_old.md");
         expect(tools.log.warn).toHaveBeenCalledWith("Ignorning deleted file not in _documentation folder: removed.md");
         expect(tools.getFile).toHaveBeenCalledWith("config/redirects.yml");
@@ -159,9 +162,9 @@ describe("Check Redirects Action", () => {
         expect(tools.exit.failure).toHaveBeenCalledWith(
           `Missing redirects: 
 
-Specified redirect could not be found: /tmp/_documentation/file1-invalid.md
-Specified redirect could not be found: /tmp/_documentation/client-sdk/file3-invalid.md
-Specified redirect could not be found: /tmp/_documentation/file2-invalid.md`
+Specified redirect could not be found: /tmp/_documentation/cn/file1-invalid.md
+Specified redirect could not be found: /tmp/_documentation/en/client-sdk/file3-invalid.md
+Specified redirect could not be found: /tmp/_documentation/en/file2-invalid.md`
       );
       });
     });

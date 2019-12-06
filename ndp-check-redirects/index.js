@@ -48,8 +48,8 @@ Toolkit.run(async tools => {
       }
 
       changedFiles.push({
-        from: pathToUrl(file.previous_filename),
-        to: pathToUrl(file.filename)
+        from: file.previous_filename,
+        to: pathToUrl(file.filename),
       });
     }
 
@@ -60,7 +60,7 @@ Toolkit.run(async tools => {
       }
 
       changedFiles.push({
-        from: pathToUrl(file.filename),
+        from: file.filename,
         to: 'MISSING'
       });
     }
@@ -80,17 +80,17 @@ Toolkit.run(async tools => {
     const errors = [];
     const foundRedirects = {};
     for (let change of changedFiles) {
-      if (!redirects[change.from]) {
-        errors.push(`"${change.from}": "${change.to}"`);
+      if (!redirects[pathToUrl(change.from)]) {
+        errors.push(`"${pathToUrl(change.from)}": "${change.to}"`);
       } else {
-        foundRedirects[change.from] = redirects[change.from];
+        foundRedirects[change.from] = redirects[pathToUrl(change.from)];
       }
     }
     tools.log.complete('Checking if redirects exist');
 
     // If there is a redirect, make sure that the new destination exists
     for (let f in foundRedirects) {
-      let path = `${tools.workspace}/_documentation${foundRedirects[f]}.md`
+      let path = `${tools.workspace}/_documentation/${getLocaleFromPath(f)}${foundRedirects[f]}.md`
 
       let missing = true;
 
@@ -121,6 +121,10 @@ Toolkit.run(async tools => {
     tools.exit.success('No missing redirects');
   }
 }, { event: 'pull_request' })
+
+function getLocaleFromPath(path) {
+  return path.substr(15, 2);
+}
 
 function pathToUrl(path) {
     return path.substr(17).slice(0, -3);
