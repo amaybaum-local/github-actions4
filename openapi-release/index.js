@@ -41,6 +41,11 @@ Toolkit.run(async tools => {
 
   tools.log.debug(`Latest tag commit hash: ${before}`);
 
+  if (!/[0-9a-f]{40}/.test(before)) {
+    tools.exit.failure("A manual release has been created with a target_commitish that is not a sha. Unable to proceed");
+    return;
+  }
+
   tools.log.debug(`Generating diff since that commit`);
   tools.log.debug(`From: ${before}`);
   tools.log.debug(`To: ${commit_sha}`);
@@ -123,6 +128,10 @@ Toolkit.run(async tools => {
     return;
   }
 
+  // If any of the versions are quoted in strings, remove those
+  fromVersion = stripQuotes(fromVersion);
+  toVersion = stripQuotes(toVersion);
+
   // Make sure the version number went upwards
   if (semver.gt(fromVersion, toVersion)) {
     tools.exit.failure(
@@ -194,3 +203,18 @@ Toolkit.run(async tools => {
     return;
   }
 });
+
+function stripQuotes(str) {
+  let first = str[0];
+  let last = str[str.length-1];
+
+  if (first == '"' && last == '"'){
+    return str.slice(1,-1);
+  }
+
+  if (first == "'" && last == "'"){
+    return str.slice(1,-1);
+  }
+
+  return str;
+}

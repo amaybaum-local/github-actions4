@@ -49,6 +49,23 @@ describe("OAS Release Action", () => {
   });
 
   describe("Change detection", () => {
+    it("exits if a non-sha target_committish is returned", async () => {
+      let owner = tools.context.payload.repository.owner.name;
+      let repo = tools.context.payload.repository.name;
+
+      nock("https://api.github.com")
+        .get(`/repos/${owner}/${repo}/releases?per_page=1&page=1`)
+        .reply(200, [
+          { target_commitish: "master" }
+        ]);
+
+      tools.exit.failure = jest.fn();
+      await action(tools);
+      expect(tools.exit.failure).toHaveBeenCalledWith(
+        "A manual release has been created with a target_commitish that is not a sha. Unable to proceed"
+      );
+    });
+
     it("exits with files with no version changes", async () => {
       let owner = tools.context.payload.repository.owner.name;
       let repo = tools.context.payload.repository.name;
