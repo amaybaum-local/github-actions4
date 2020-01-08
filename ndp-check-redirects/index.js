@@ -42,7 +42,7 @@ Toolkit.run(async tools => {
   let changedFiles = [];
   for (let file of changes.data.files) {
     if (file.status == 'renamed') {
-      if (file.previous_filename.substr(0, 14) != '_documentation') {
+      if (ignoreFile(file.previous_filename)) {
         tools.log.warn(`Ignorning renamed file not in _documentation folder: ${file.previous_filename}`);
         continue;
       }
@@ -54,7 +54,7 @@ Toolkit.run(async tools => {
     }
 
     if (file.status == 'removed') {
-      if (file.filename.substr(0, 14) != '_documentation') {
+      if (ignoreFile(file.filename)) {
         tools.log.warn(`Ignorning deleted file not in _documentation folder: ${file.filename}`);
         continue;
       }
@@ -128,4 +128,8 @@ function getLocaleFromPath(path) {
 
 function pathToUrl(path) {
     return path.substr(17).slice(0, -3);
+}
+
+function ignoreFile(filename) {
+  return filename.substr(0, 14) != '_documentation' || filename.substr(-11) == '.config.yml';
 }
