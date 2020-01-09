@@ -65,6 +65,10 @@ describe("Check Redirects Action", () => {
         {
           "filename": "removed.md",
           "status": "removed",
+        },
+        {
+          "filename": "_documentation/en/client-sdk/in-app-voice/guides/start-and-receive-calls/.config.yml",
+          "status": "removed"
         }
       ]
     };
