@@ -169,7 +169,7 @@ describe("Check Redirects Action", () => {
 Specified redirect could not be found: /tmp/_documentation/cn/file1-invalid.md
 Specified redirect could not be found: /tmp/_documentation/en/client-sdk/file3-invalid.md
 Specified redirect could not be found: /tmp/_documentation/en/file2-invalid.md`
-      );
+        );
       });
     });
 
@@ -209,6 +209,42 @@ Specified redirect could not be found: /tmp/_documentation/en/file2-invalid.md`
         changes
       );
       await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("No missing redirects");
+    });
+  });
+
+  describe("With tabbed content", () => {
+    let changes = {
+      "files": [
+        {
+          "filename": "_documentation/en/client-sdk/in-app-voice/guides/start-and-receive-calls/android.md",
+          "status": "removed"
+        }
+      ]
+    };
+
+    beforeEach(() => {
+      mockCommitDiff(
+        repo,
+        owner,
+        base,
+        head,
+        changes
+      );
+    });
+
+    it("checks if the redirects is part of the tabbed content", async () => {
+      tools.getFile.mockReturnValueOnce(
+        `---
+          /client-sdk/in-app-voice/guides/start-and-receive-calls/android: /client-sdk/in-app-voice/guides/make-call/android
+          `
+      ).mockReturnValueOnce('');
+      fs.existsSync = jest.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
+
+      await action(tools);
+
+      expect(fs.existsSync.mock.calls[0][0]).toBe("/tmp/_documentation/en/client-sdk/in-app-voice/guides/make-call/android.md");
+      expect(fs.existsSync.mock.calls[1][0]).toBe("/tmp/_tutorials_tabbed_content/client-sdk/in-app-voice/guides/make-call/android.md");
       expect(tools.exit.success).toHaveBeenCalledWith("No missing redirects");
     });
   });

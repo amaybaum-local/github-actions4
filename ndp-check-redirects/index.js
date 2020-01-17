@@ -91,11 +91,12 @@ Toolkit.run(async tools => {
     // If there is a redirect, make sure that the new destination exists
     for (let f in foundRedirects) {
       let path = `${tools.workspace}/_documentation/${getLocaleFromPath(f)}${foundRedirects[f]}.md`
+      let tabbed_content_path = `${tools.workspace}/_tutorials_tabbed_content${foundRedirects[f]}.md`;
 
       let missing = true;
 
       // If the file exists on disk the redirect is valid
-      if (fs.existsSync(path)) {
+      if (fs.existsSync(path) || fs.existsSync(tabbed_content_path)) {
         missing = false;
       }
 
