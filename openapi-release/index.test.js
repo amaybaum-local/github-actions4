@@ -274,6 +274,35 @@ index 0000000..5a703fc
       expect(tools.exit.success).toHaveBeenCalledWith(`Release created`);
     });
 
+    it("is a deleted API and it skips release", async () => {
+      let owner = tools.context.payload.repository.owner.name;
+      let repo = tools.context.payload.repository.name;
+
+      mockReleases(repo, owner);
+
+      mockCommitDiff(
+        repo,
+        owner,
+        `
+diff --git a/definitions/test.yml b/definitions/test.yml
+new file mode 100644
+index 0000000..5a703fc
+--- a/definitions/test.yml
++++ /dev/null
+@@ -0,0 +1,5 @@
+-openapi: 3.0.0
+-info:
+-  title: Test API
+-  version: 1.0.10
+-  description: This is a description
+`
+      );
+
+      tools.exit.success = jest.fn();
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith(`No version change detected. Exiting`);
+    });
+
     it("valid update with PR creates a release", async () => {
       let owner = tools.context.payload.repository.owner.name;
       let repo = tools.context.payload.repository.name;

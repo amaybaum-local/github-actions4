@@ -66,10 +66,21 @@ Toolkit.run(async tools => {
 
   commit.data.split("\n").forEach(line => {
     // Pull out the header
-    // We have to use +++ b/ as if files are created, a/ doesn't exist
-    if (line.substr(0, 6) == "+++ b/") {
-      currentFile = line.substr(6);
-      versionChanges[currentFile] = {};
+    // We have to check both --- a/ and  +++ b/ 
+    // as if files are created, a/ doesn't exist
+    // and if files are removed, b/ doesn't exist
+    const addedOrRemoved = line.substr(0, 6);
+    if (["--- a/", "+++ b/"].indexOf(addedOrRemoved) !== -1 || line == "+++ /dev/null") {
+      // If it's an OAS deletion, we don't want any changelog
+      // So we add __DELETED which means it doesn't end in .yml
+      // and is skipped later on
+      if (line == "+++ /dev/null") {
+        currentFile += '__DELETED';
+      } else {
+        currentFile = line.substr(6);
+      }
+
+      versionChanges[currentFile] = {}
     }
 
     if (line.substr(0, 11) == "-  version:") {
