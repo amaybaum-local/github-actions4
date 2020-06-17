@@ -2,7 +2,7 @@ const { Toolkit } = require("actions-toolkit");
 const Octokit = require("@octokit/rest");
 const semver = require("semver");
 
-Toolkit.run(async tools => {
+Toolkit.run(async (tools) => {
   const requiredActiveBranch =
     process.env.OAS_RELEASE_ACTIVE_BRANCH || "master";
 
@@ -34,7 +34,7 @@ Toolkit.run(async tools => {
     owner,
     repo,
     per_page: 1,
-    page: 1
+    page: 1,
   });
 
   const before = latestRelease.data[0].target_commitish;
@@ -42,7 +42,9 @@ Toolkit.run(async tools => {
   tools.log.debug(`Latest tag commit hash: ${before}`);
 
   if (!/[0-9a-f]{40}/.test(before)) {
-    tools.exit.failure("A manual release has been created with a target_commitish that is not a sha. Unable to proceed");
+    tools.exit.failure(
+      "A manual release has been created with a target_commitish that is not a sha. Unable to proceed"
+    );
     return;
   }
 
@@ -55,8 +57,8 @@ Toolkit.run(async tools => {
     head: commit_sha,
     base: before,
     mediaType: {
-      format: ["diff"]
-    }
+      format: ["diff"],
+    },
   });
   tools.log.debug(`Diff generated. Extracting changed versions`);
 
@@ -64,23 +66,26 @@ Toolkit.run(async tools => {
   let versionChanges = {};
   let currentFile = "";
 
-  commit.data.split("\n").forEach(line => {
+  commit.data.split("\n").forEach((line) => {
     // Pull out the header
-    // We have to check both --- a/ and  +++ b/ 
+    // We have to check both --- a/ and  +++ b/
     // as if files are created, a/ doesn't exist
     // and if files are removed, b/ doesn't exist
     const addedOrRemoved = line.substr(0, 6);
-    if (["--- a/", "+++ b/"].indexOf(addedOrRemoved) !== -1 || line == "+++ /dev/null") {
+    if (
+      ["--- a/", "+++ b/"].indexOf(addedOrRemoved) !== -1 ||
+      line == "+++ /dev/null"
+    ) {
       // If it's an OAS deletion, we don't want any changelog
       // So we add __DELETED which means it doesn't end in .yml
       // and is skipped later on
       if (line == "+++ /dev/null") {
-        currentFile += '__DELETED';
+        currentFile += "__DELETED";
       } else {
         currentFile = line.substr(6);
       }
 
-      versionChanges[currentFile] = {}
+      versionChanges[currentFile] = {};
     }
 
     if (line.substr(0, 11) == "-  version:") {
@@ -95,7 +100,7 @@ Toolkit.run(async tools => {
 
   // Filter down to just .yml files
   versionChanges = Object.keys(versionChanges)
-    .filter(key => key.match(/\.yml$/))
+    .filter((key) => key.match(/\.yml$/))
     .reduce((obj, key) => {
       if (Object.keys(versionChanges[key]).length) {
         obj[key] = versionChanges[key];
@@ -105,126 +110,117 @@ Toolkit.run(async tools => {
 
   let changedOasFilesCount = Object.keys(versionChanges).length;
 
-  // Case 1: No versions were updated. Exit as it could be a README update etc
+  // No versions were updated. Exit as it could be a README update etc
   if (changedOasFilesCount === 0) {
     tools.exit.success("No version change detected. Exiting");
     return;
   }
 
-  // Case 2: Multiple specifications were updated. Error!
-  // If there are multiple changed versions we need to add a
-  // changelog entry manually
-  if (changedOasFilesCount > 1) {
-    tools.exit.failure(
-      `Multiple changes detected in a single commit. Manual changelog required: ${Object.keys(
-        versionChanges
-      ).join(", ")}`
+  for (let updatedApiName in versionChanges) {
+    // Strip off the definitions/ leader and the suffix (including .v2 etc)
+    let humanApiName = updatedApiName.split(".")[0].replace("definitions/", "");
+
+    let fromVersion = versionChanges[updatedApiName].from;
+    let toVersion = versionChanges[updatedApiName].to;
+
+    // If it's a new OAS doc there is no previous version
+    fromVersion = fromVersion || "0.0.0";
+
+    if (fromVersion && !toVersion) {
+      tools.exit.failure("The version key is missing in the new commit");
+      return;
+    }
+
+    // If any of the versions are quoted in strings, remove those
+    fromVersion = stripQuotes(fromVersion);
+    toVersion = stripQuotes(toVersion);
+
+    // Make sure the version number went upwards
+    if (semver.gt(fromVersion, toVersion)) {
+      tools.exit.failure(
+        `New version is less than the old version. ${fromVersion} -> ${toVersion}`
+      );
+      return;
+    }
+
+    tools.log.debug(
+      `${updatedApiName} has changed ${fromVersion} -> ${toVersion}`
     );
-    return;
-  }
 
-  // What API did we update, and which versions are involved?
-  let updatedApiName = Object.keys(versionChanges)[0];
-  // Strip off the definitions/ leader and the suffix (including .v2 etc)
-  let humanApiName = updatedApiName.split(".")[0].replace("definitions/", "");
+    tools.log.debug(`Fetching PR that the commit was part of`);
 
-  let fromVersion = versionChanges[updatedApiName].from;
-  let toVersion = versionChanges[updatedApiName].to;
-
-  // If it's a new OAS doc there is no previous version
-  fromVersion = fromVersion || "0.0.0";
-
-  if (fromVersion && !toVersion) {
-    tools.exit.failure("The version key is missing in the new commit");
-    return;
-  }
-
-  // If any of the versions are quoted in strings, remove those
-  fromVersion = stripQuotes(fromVersion);
-  toVersion = stripQuotes(toVersion);
-
-  // Make sure the version number went upwards
-  if (semver.gt(fromVersion, toVersion)) {
-    tools.exit.failure(
-      `New version is less than the old version. ${fromVersion} -> ${toVersion}`
-    );
-    return;
-  }
-
-  tools.log.debug(
-    `${updatedApiName} has changed ${fromVersion} -> ${toVersion}`
-  );
-
-  tools.log.debug(`Fetching PR that the commit was part of`);
-  // If the version field was removed, error
-  // Which PR was this commit a part of? We need the description from it
-  let pr = await tools.github.repos.listPullRequestsAssociatedWithCommit({
-    owner,
-    repo,
-    commit_sha
-  });
-
-  if (!pr.data[0]) {
-    tools.exit.failure("There seems to be a change without a PR. Exiting");
-    return;
-  }
-
-  let prBody = pr.data[0].body;
-
-  const stringsToRemove = [
-    "# Description\r\n\r\n",
-    "# Checklist\r\n\r\n- [x] version number incremented (in the `info` section of the spec)"
-  ];
-
-  for (let str of stringsToRemove) {
-    prBody = prBody.replace(str, "");
-  }
-
-  prBody = prBody.trim();
-
-  tools.log.debug(`Generating release information`);
-
-  // Generate our release notes
-  let tagName = `${humanApiName}-${toVersion}`;
-  let titleApiName =
-    humanApiName.charAt(0).toUpperCase() + humanApiName.slice(1);
-  let releaseTitle = `${titleApiName} API v${toVersion}`;
-  let releaseNotes = prBody;
-
-  tools.log.info("Tag: " + tagName);
-  tools.log.info("Commit: " + commit_sha);
-  tools.log.info("Release Title: " + releaseTitle);
-  tools.log.info("Release Notes: " + releaseNotes);
-
-  try {
-    let release = await tools.github.repos.createRelease({
+    // If the version field was removed, error
+    // Which PR was this commit a part of? We need the description from it
+    let pr = await tools.github.repos.listPullRequestsAssociatedWithCommit({
       owner,
       repo,
-      name: releaseTitle,
-      body: releaseNotes,
-      tag_name: tagName,
-      target_commitish: commit_sha
+      commit_sha,
     });
 
-    tools.exit.success("Release created");
-  } catch (e) {
-    tools.exit.failure(
-      `Error creating release. Does '${releaseTitle}' already exist?`
-    );
-    return;
+    if (!pr.data[0]) {
+      tools.exit.failure("There seems to be a change without a PR. Exiting");
+      return;
+    }
+
+    let prBody = pr.data[0].body;
+
+    const stringsToRemove = [
+      "# Description\r\n\r\n",
+      "# Checklist\r\n\r\n- [x] version number incremented (in the `info` section of the spec)",
+    ];
+
+    for (let str of stringsToRemove) {
+      prBody = prBody.replace(str, "");
+    }
+
+    prBody = prBody.trim();
+
+    tools.log.debug(`Generating release information`);
+
+    // Generate our release notes
+    let tagName = `${humanApiName}-${toVersion}`;
+    let titleApiName =
+      humanApiName.charAt(0).toUpperCase() + humanApiName.slice(1);
+    let releaseTitle = `${titleApiName} API v${toVersion}`;
+    let releaseNotes = prBody;
+
+    tools.log.info("Tag: " + tagName);
+    tools.log.info("Commit: " + commit_sha);
+    tools.log.info("Release Title: " + releaseTitle);
+    tools.log.info("Release Notes: " + releaseNotes);
+
+    try {
+      let release = await tools.github.repos.createRelease({
+        owner,
+        repo,
+        name: releaseTitle,
+        body: releaseNotes,
+        tag_name: tagName,
+        target_commitish: commit_sha,
+      });
+
+      tools.log.success(`Release created: ${tagName}`);
+    } catch (e) {
+      tools.exit.failure(
+        `Error creating release. Does '${releaseTitle}' already exist?`
+      );
+      return;
+    }
   }
+
+  tools.exit.success("Action complete");
 });
 
 function stripQuotes(str) {
   let first = str[0];
-  let last = str[str.length-1];
+  let last = str[str.length - 1];
 
-  if (first == '"' && last == '"'){
-    return str.slice(1,-1);
+  if (first == '"' && last == '"') {
+    return str.slice(1, -1);
   }
 
-  if (first == "'" && last == "'"){
-    return str.slice(1,-1);
+  if (first == "'" && last == "'") {
+    return str.slice(1, -1);
   }
 
   return str;

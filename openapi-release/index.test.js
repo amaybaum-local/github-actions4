@@ -14,7 +14,7 @@ describe("OAS Release Action", () => {
   let action, tools;
 
   // Mock Toolkit.run to define `action` so we can call it
-  Toolkit.run = jest.fn(actionFn => {
+  Toolkit.run = jest.fn((actionFn) => {
     action = actionFn;
   });
   // Load up our entrypoint file
@@ -55,9 +55,7 @@ describe("OAS Release Action", () => {
 
       nock("https://api.github.com")
         .get(`/repos/${owner}/${repo}/releases?per_page=1&page=1`)
-        .reply(200, [
-          { target_commitish: "master" }
-        ]);
+        .reply(200, [{ target_commitish: "master" }]);
 
       tools.exit.failure = jest.fn();
       await action(tools);
@@ -89,7 +87,7 @@ describe("OAS Release Action", () => {
       );
     });
 
-    it("fails with changes in multiple files", async () => {
+    it("passes with changes in multiple files", async () => {
       let owner = tools.context.payload.repository.owner.name;
       let repo = tools.context.payload.repository.name;
 
@@ -127,12 +125,35 @@ index ad8ad0b..780f370 100644
 `
       );
 
-      // If so, let's exit
-      tools.exit.failure = jest.fn();
+      // We do this twice as there are two PRs
+      mockPrsForCommit(repo, owner, [
+        {
+          body: "This is a change for the redact API",
+        },
+      ]);
+      mockPrsForCommit(repo, owner, [{ body: "Changes for the report API" }]);
+
+      // Mock the two releases
+      let redactBody = {
+        name: "Redact API v1.0.3",
+        body: "This is a change for the redact API",
+        tag_name: "redact-1.0.3",
+        target_commitish: "34e6b602668b883822364f3f5b87c3940269dcf3",
+      };
+
+      mockSuccessfulRelease(repo, owner, redactBody);
+
+      const reportBody = {
+        name: "Reports API v2.0.4",
+        body: "Changes for the report API",
+        tag_name: "reports-2.0.4",
+        target_commitish: "34e6b602668b883822364f3f5b87c3940269dcf3",
+      };
+      mockSuccessfulRelease(repo, owner, reportBody);
+
+      tools.exit.success = jest.fn();
       await action(tools);
-      expect(tools.exit.failure).toHaveBeenCalledWith(
-        `Multiple changes detected in a single commit. Manual changelog required: definitions/redact.yml, definitions/reports.yml`
-      );
+      expect(tools.exit.success).toHaveBeenCalledWith(`Action complete`);
     });
 
     it("passes with a single version update, but the version was removed", async () => {
@@ -265,13 +286,13 @@ index 0000000..5a703fc
           "\r\n" +
           "Added new `has_application` and `application_id` filters to the Numbers API",
         tag_name: "test-1.0.10",
-        target_commitish: "34e6b602668b883822364f3f5b87c3940269dcf3"
+        target_commitish: "34e6b602668b883822364f3f5b87c3940269dcf3",
       };
 
       mockSuccessfulRelease(repo, owner, releaseBody);
       tools.exit.success = jest.fn();
       await action(tools);
-      expect(tools.exit.success).toHaveBeenCalledWith(`Release created`);
+      expect(tools.exit.success).toHaveBeenCalledWith(`Action complete`);
     });
 
     it("is a deleted API and it skips release", async () => {
@@ -300,7 +321,9 @@ index 0000000..5a703fc
 
       tools.exit.success = jest.fn();
       await action(tools);
-      expect(tools.exit.success).toHaveBeenCalledWith(`No version change detected. Exiting`);
+      expect(tools.exit.success).toHaveBeenCalledWith(
+        `No version change detected. Exiting`
+      );
     });
 
     it("valid update with PR creates a release", async () => {
@@ -338,12 +361,12 @@ index f8bfcaf..5a703fc 100644
           "\r\n" +
           "Added new `has_application` and `application_id` filters to the Numbers API",
         tag_name: "numbers-1.0.10",
-        target_commitish: "34e6b602668b883822364f3f5b87c3940269dcf3"
+        target_commitish: "34e6b602668b883822364f3f5b87c3940269dcf3",
       };
       mockSuccessfulRelease(repo, owner, releaseBody);
       tools.exit.success = jest.fn();
       await action(tools);
-      expect(tools.exit.success).toHaveBeenCalledWith(`Release created`);
+      expect(tools.exit.success).toHaveBeenCalledWith(`Action complete`);
     });
 
     it("duplicate release fails", async () => {
@@ -390,7 +413,7 @@ function mockReleases(repo, owner) {
   nock("https://api.github.com")
     .get(`/repos/${owner}/${repo}/releases?per_page=1&page=1`)
     .reply(200, [
-      { target_commitish: "3bf644c4094ae5016b68bc554c3d53121e7276bd" }
+      { target_commitish: "3bf644c4094ae5016b68bc554c3d53121e7276bd" },
     ]);
 }
 
@@ -398,8 +421,8 @@ function mockPrsForCommit(repo, owner, body) {
   body = body || [
     {
       body:
-        "# Description\r\n\r\nNumbers API has new filters to make it easier to find numbers that are (or are not!) associated with applications\r\n\r\n# New \r\n\r\nAdded new `has_application` and `application_id` filters to the Numbers API\r\n\r\n# Checklist\r\n\r\n- [x] version number incremented (in the `info` section of the spec)\r\n"
-    }
+        "# Description\r\n\r\nNumbers API has new filters to make it easier to find numbers that are (or are not!) associated with applications\r\n\r\n# New \r\n\r\nAdded new `has_application` and `application_id` filters to the Numbers API\r\n\r\n# Checklist\r\n\r\n- [x] version number incremented (in the `info` section of the spec)\r\n",
+    },
   ];
 
   nock("https://api.github.com")
