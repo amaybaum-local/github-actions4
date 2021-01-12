@@ -1,0 +1,9 @@
+name: 'Publish release to NuGet'
+description: 'When a new release is tagged - update the csproj file of the project to the tagged version, and publish a new release.'
+author: 'Stephen Lorello'
+branding:
+  icon: 'search'
+  color: 'orange'
+runs:
+  using: docker
+  image: Dockerfile  
