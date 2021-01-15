@@ -33,6 +33,7 @@ jobs:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           GITHUB_USER_NAME: USER_NAME
           GITHUB_EMAIL: USER_EMAIL
+          OUTPUT_PATH: OUTPUT_PATH
 ```
 
 ## Args
@@ -47,6 +48,7 @@ jobs:
 | NUGET_API_KEY | your API key from NuGet - it is strongly advised that you add this to your repo's secrets and use it from there. |
 | GITHUB_USER_NAME | Your github username |
 | GITHUB_EMAIL| Your github email |
+| OUTPUT_PATH | the path that your build will output to - typically PROJECT_NAME/bin/Release|
 | TAG | Your releases tag - must use `${{ github.event.release.tag_name }}` |
 
 > NOTE: TAG must be in the form of `vX.Y.Z` where X = major version, Y = minor Version, Z = patch version.
