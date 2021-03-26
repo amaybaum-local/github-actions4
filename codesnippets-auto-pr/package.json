@@ -1,0 +1,23 @@
+{
+    "name": "code-snippets-auto-pr",
+    "version": "1.0.0",
+    "description": "When code snippets are updated in ADP, we want to check if the dashboard's snippets have been effected, if they have we want to open a PR to that repo",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Steve Lorello",
+    "license": "MIT",
+    "dependencies": {
+      "child_process": "^1.0.2",
+      "js-yaml": "^3.13.1",
+      "eslint": "^5.10.0",
+      "eslint-config-prettier": "^3.3.0",
+      "eslint-plugin-prettier": "^3.0.0",
+      "prettier": "^1.15.3",
+      "jest": "^24.5.0",
+      "nock": "^11.7.0",
+      "actions-toolkit": "^2.1.0",
+      "octokit-commit-multiple-files":"^3.2.1"
+    }
+  }
