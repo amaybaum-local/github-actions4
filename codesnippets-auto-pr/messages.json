@@ -1,0 +1,104 @@
+{
+    "curl": {
+      "syntax": "Bash",
+      "sections": [
+        {
+          "header": "Write the code",
+          "code": "CHANNELS",
+          "channels": {
+            "sms": "curl -X POST https://api.nexmo.com/v0.1/messages \\\r\n  -u 'VONAGE_API_KEY:VONAGE_API_SECRET'\\\r\n  -H 'Content-Type: application/json' \\\r\n  -H 'Accept: application/json' \\\r\n  -d '{\r\n    \"from\": { \"type\": \"sms\", \"number\": \"SENDER_ID\" },\r\n    \"to\": { \"type\": \"sms\", \"number\": \"TO_NUMBER\" },\r\n    \"message\": {\r\n      \"content\": {\r\n        \"type\": \"text\",\r\n        \"text\": \"MESSAGE_TEXT\"\r\n      }\r\n    }\r\n  }'",
+            "whatsapp": "# This example lets you try it out with our test account.\n# Find out how you can get a WhatsApp approved business account here: \n# https://developer.nexmo.com/messages/concepts/whatsapp \ncurl -X POST https://api.nexmo.com/v0.1/messages \\\r\n  -u 'VONAGE_API_KEY:VONAGE_API_SECRET'\\\r\n  -H 'Content-Type: application/json' \\\r\n  -H 'Accept: application/json' \\\r\n  -d '{\r\n    \"from\": { \"type\": \"whatsapp\", \"number\": \"WHATSAPP_NUMBER\" },\r\n    \"to\": { \"type\": \"whatsapp\", \"number\": \"WHATSAPP_NUMBER\" },\r\n    \"message\": {\r\n      \"content\": {\r\n        \"type\": \"text\",\r\n        \"text\": \"MESSAGE_TEXT\"\r\n      }\r\n    }\r\n  }'",
+            "viber": "# This example lets you try it out with our test account.\n# Find out how you can get a Viber approved business account here: \n# https://developer.nexmo.com/messages/concepts/viber \ncurl -X POST https://api.nexmo.com/v0.1/messages \\\r\n  -u 'VONAGE_API_KEY:VONAGE_API_SECRET'\\\r\n  -H 'Content-Type: application/json' \\\r\n  -H 'Accept: application/json' \\\r\n  -d '{\r\n    \"from\": { \"type\": \"viber_service_msg\", \"number\": \"VIBER_SERVICE_NUMBER\" },\r\n    \"to\": { \"type\": \"viber_service_msg\", \"number\": \"TO_NUMBER\" },\r\n    \"message\": {\r\n      \"content\": {\r\n        \"type\": \"text\",\r\n        \"text\": \"MESSAGE_TEXT\"\r\n      }\r\n    }\r\n  }'",
+            "facebook": "# This example lets you try it out with our test account.\n# Find out how you can get a Facebook approved business account here: \n# https://developer.nexmo.com/messages/concepts/facebook \ncurl -X POST https://api.nexmo.com/v0.1/messages \\\r\n  -u 'VONAGE_API_KEY:VONAGE_API_SECRET'\\\r\n  -H 'Content-Type: application/json' \\\r\n  -H 'Accept: application/json' \\\r\n  -d '{\r\n    \"from\": { \"type\": \"messenger\", \"id\": \"FACEBOOK_PAGE_ID\" },\r\n    \"to\": { \"type\": \"messenger\", \"id\": \"FACEBOOK_RECIPIENT_ID\" },\r\n    \"message\": {\r\n      \"content\": {\r\n        \"type\": \"text\",\r\n        \"text\": \"MESSAGE_TEXT\"\r\n      }\r\n    }\r\n  }'"
+          },
+          "keysToReplace": [
+            "VONAGE_API_KEY",
+            "VONAGE_API_SECRET",
+            "SENDER_ID",
+            "MESSAGE_TEXT",
+            "TO_NUMBER",
+            "WHATSAPP_NUMBER"
+          ]
+        }
+      ]
+    },
+    "dotnet": {
+      "syntax": "Csharp",
+      "sections": [
+        {
+          "header": "",
+          "code": "",
+          "keysToReplace": []
+        }
+      ]
+    },
+    "java": {
+      "syntax": "java",
+      "sections": [
+        {
+          "header": "",
+          "code": "",
+          "keysToReplace": []
+        }
+      ]
+    },
+    "node": {
+      "syntax": "Javascript",
+      "sections": [
+        {
+          "header": "Install the library",
+          "code": "npm install @vonage/server-sdk@beta",
+          "keysToReplace": [],
+          "syntax":"Bash"
+        },
+        {
+          "header": "Write the code",
+          "code": "const Vonage = require('vonage');\n\nconst vonage = new Vonage({\n  apiKey: 'VONAGE_API_KEY',\n  apiSecret: 'VONAGE_API_SECRET',\n});\n\nconst message = {\n  content: {\n    type: 'text',\n    text: 'MESSAGE_TEXT',\n  },\n};\n\nCHANNELS\n",
+          "channels": {
+            "sms": "vonage.channel.send(\n  { type: 'sms', number: 'TO_NUMBER' },\n  { type: 'sms', number: 'SENDER_ID' },\n  message,\n  (err, data) => { console.log(data.message_uuid); },\n  { useBasicAuth: true },\n);",
+            "whatsapp": "// This example lets you try it out with our test account.\n// Find out how you can get a WhatsApp approved business account here:\n// https://developer.nexmo.com/messages/concepts/whatsapp\nvonage.channel.send(\n  { type: 'whatsapp', number: 'WHATSAPP_NUMBER' },\n  { type: 'whatsapp', number: 'WHATSAPP_NUMBER' },\n  message,\n  (err, data) => { console.log(data.message_uuid); }\n);",
+            "viber": "// This example lets you try it out with our test account.\n// Find out how you can get a Viber approved business account here:\n// https://developer.nexmo.com/messages/concepts/viber\nvonage.channel.send(\r\n  { type: 'viber_service_msg', number: 'TO_NUMBER' },\r\n  { type: 'viber_service_msg', id: 'VIBER_SERVICE_MESSAGE_ID' },\r\n  message,\r\n  (err, data) => { console.log(data.message_uuid); }\r\n);",
+            "facebook": "// This example lets you try it out with our test account.\n// Find out how you can get a Facebook approved business account here:\n// https://developer.nexmo.com/messages/concepts/facebook\nvonage.channel.send(\r\n  { type: 'messenger', id: 'FACEBOOK_RECIPIENT_ID' },\r\n  { type: 'messenger', id: 'FACEBOOK_PAGE_ID' },\r\n  message,\r\n  (err, data) => { console.log(data.message_uuid); }\r);"
+          },
+          "keysToReplace": [
+            "VONAGE_API_KEY",
+            "VONAGE_API_SECRET",
+            "SENDER_ID",
+            "MESSAGE_TEXT",
+            "TO_NUMBER",
+            "WHATSAPP_NUMBER"
+          ]
+        }
+      ]
+    },
+    "ruby": {
+      "syntax": "Ruby",
+      "sections": [
+        {
+          "header": "",
+          "code": "",
+          "keysToReplace": []
+        }
+      ]
+    },
+    "python": {
+      "syntax": "Python",
+      "sections": [
+        {
+          "header": "",
+          "code": "",
+          "keysToReplace": []
+        }
+      ]
+    },
+    "php": {
+      "syntax": "PHP",
+      "sections": [
+        {
+          "header": "",
+          "code": "",
+          "keysToReplace": []
+        }
+      ]
+    }
+  }

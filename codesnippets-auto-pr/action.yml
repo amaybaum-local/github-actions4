@@ -1,0 +1,9 @@
+name: 'Auto-PR code snippets'
+description: 'Snippets are updated for the dashboard, automatically run this action, it will generate a new well formatted json file for the dashboard, update its tests and open a new PR against the dashboard.'
+author: 'Stephen Lorello'
+branding:
+  icon: 'search'
+  color: 'orange'
+runs:
+  using: docker
+  image: Dockerfile  
