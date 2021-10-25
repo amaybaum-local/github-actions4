@@ -19,6 +19,7 @@ class Action{
         this.github_user_name = process.env.GITHUB_USER_NAME;
         this.github_email = process.env.GITHUB_EMAIL;
         this.output_path = process.env.OUTPUT_PATH;
+        this.configuration = process.env.CONFIGURATION || 'Release';
         this._executeCommand(`git config --global user.name "${this.github_user_name}"`);
         this._executeCommand(`git config --global user.email "${this.github_email}"`);
         this._executeCommand(`git config --global github.token ${process.env.GITHUB_TOKEN}`);
@@ -73,8 +74,8 @@ class Action{
                                 this._executeCommand(`git push`);
                                 this._executeCommand(`git tag -f ${this.tag}`);
                                 this._executeCommand(`git push origin ${this.tag} --force`);
-                                this._executeCommand(`dotnet build -c Release ${this.projectFile}`);
-                                this._executeCommand(`dotnet pack -c Release ${this.projectFile}`);
+                                this._executeCommand(`dotnet build -c ${this.configuration} ${this.projectFile}`);
+                                this._executeCommand(`dotnet pack -c ${this.configuration} ${this.projectFile}`);
                                 this._executeCommand(`dotnet nuget push ${this.output_path}/*.${this.version}.nupkg -s https://api.nuget.org/v3/index.json -k ${this.nuget_api_key}`)
                             }
                         });
