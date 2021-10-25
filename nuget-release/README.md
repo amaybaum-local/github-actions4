@@ -34,6 +34,7 @@ jobs:
           GITHUB_USER_NAME: USER_NAME
           GITHUB_EMAIL: USER_EMAIL
           OUTPUT_PATH: OUTPUT_PATH
+          CONFIGURATION: Release
 ```
 
 ## Args
@@ -50,5 +51,6 @@ jobs:
 | GITHUB_EMAIL| Your github email |
 | OUTPUT_PATH | the path that your build will output to - typically PROJECT_NAME/bin/Release|
 | TAG | Your releases tag - must use `${{ github.event.release.tag_name }}` |
+| CONFIGURATION | Optional build configuration, defaults to `Release` if not specified |
 
 > NOTE: TAG must be in the form of `vX.Y.Z` where X = major version, Y = minor Version, Z = patch version.
