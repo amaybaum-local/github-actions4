@@ -23,6 +23,7 @@ class Action{
         this._executeCommand(`git config --global user.name "${this.github_user_name}"`);
         this._executeCommand(`git config --global user.email "${this.github_email}"`);
         this._executeCommand(`git config --global github.token ${process.env.GITHUB_TOKEN}`);
+        this._executeCommand(`git config --global --add safe.directory /github/workspace`);
     }
 
     _executeCommand(cmd, options) {
